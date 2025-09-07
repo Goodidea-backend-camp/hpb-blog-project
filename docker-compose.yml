@@ -1,0 +1,59 @@
+services:
+  backend:
+    build:
+      context: ./hpb-blog-backend
+      dockerfile: Dockerfile.dev
+    container_name: hpb-blog-backend-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./hpb-blog-backend:/app
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
+    depends_on:
+      - db
+    networks:
+      - hpb-network
+    env_file:
+      - .env
+
+  frontend:
+    build:
+      context: ./hpb-blog-frontend
+      dockerfile: Dockerfile.dev
+    container_name: hpb-blog-frontend-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./hpb-blog-frontend:/app
+      - /app/node_modules
+      - /app/.nuxt
+    depends_on:
+      - backend
+    networks:
+      - hpb-network
+    env_file:
+      - .env
+
+  db:
+    image: postgres:17-alpine
+    container_name: hpb-postgres-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hpb-network
+    env_file:
+      - .env
+
+networks:
+  hpb-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
