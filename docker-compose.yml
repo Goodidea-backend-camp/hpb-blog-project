@@ -2,22 +2,16 @@ services:
   backend:
     depends_on:
       - db
-    env_file:
-      - .env
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
 
   frontend:
-    env_file:
-      - .env
     environment:
       - API_BASE_URL=http://backend:8080
 
   db:
     image: postgres:17-alpine
     restart: always
-    env_file:
-      - .env
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
