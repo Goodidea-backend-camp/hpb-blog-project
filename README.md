@@ -24,7 +24,5 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 ### 停止並移除容器
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 ```
-
-加上 `-v` 可以一併移除資料庫的 volume：`docker compose ... down -v`
