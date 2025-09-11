@@ -1,0 +1,585 @@
+openapi: 3.0.0
+info:
+  title: HPB-Blog系統 API
+  description: 針對簡單HPB-Blog系統的 API 文件，基於 Go 後端與 Nuxt.js 前端開發。
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: 開發環境伺服器
+
+tags:
+  - name: 文章
+    description: 與部落格文章相關的操作 (對應到 'posts' 表)
+  - name: 認證
+    description: 使用者身份驗證與授權 (對應到 'users' 表)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User: # 反映 'users' 表的結構
+      type: object
+      required:
+        - id
+        - username
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: 使用者的唯一識別符
+          example: 1
+        username:
+          type: string
+          description: 使用者唯一的帳號名稱
+          example: "john_doe"
+        created_at:
+          type: string
+          format: date-time
+          description: 使用者創建時的時間戳記
+          example: "2023-10-27T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: 使用者上次更新時的時間戳記
+          example: "2023-10-27T10:00:00Z"
+        # password, remember_token, deleted_at 是內部/管理員欄位，通常不透過公共 API 直接暴露給使用者物件
+    AuthorInfo: # 新增作者資訊 Schema，用於文章響應
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: 作者的唯一識別符
+          example: 1
+        username:
+          type: string
+          description: 作者的帳號名稱
+          example: "john_doe"
+    Article: # 反映 'posts' 表的結構
+      type: object
+      required:
+        - id
+        # - user_id # 移除 user_id
+        - author # 新增 author 物件
+        - title
+        - slug
+        - content
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: 文章 (貼文) 的唯一識別符
+          example: 101
+        # user_id: # 此字段不再直接暴露，而是嵌套在 author 物件中
+        #   type: integer
+        #   format: int32
+        #   description: 撰寫文章的使用者 ID
+        #   example: 1
+        author: # 將 user_id 替換為 author 物件
+          $ref: '#/components/schemas/AuthorInfo'
+          description: 文章作者的資訊
+        title:
+          type: string
+          description: 文章標題
+          example: "我的第一篇部落格文章"
+        slug:
+          type: string
+          description: 文章的 SEO 友善 URL 簡稱
+          example: "my-first-blog-post"
+        content:
+          type: string
+          description: 文章的完整內容，支援 Markdown 格式
+          example: "# 歡迎\n\n這是 **Markdown** 內容。"
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 文章發布的日期和時間。如果尚未發布則為 null (草稿)。
+          example: "2023-10-27T10:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: 文章創建時的時間戳記
+          example: "2023-10-27T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: 文章上次更新時的時間戳記
+          example: "2023-10-27T09:30:00Z"
+        # deleted_at 用於軟刪除，通常不透過公共 API 直接暴露
+    NewArticle:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          description: 新文章的標題
+          example: "一篇全新的文章"
+        content:
+          type: string
+          description: 新文章的內容，支援 Markdown 格式
+          example: "這是新文章的 *主體*。"
+        slug:
+          type: string
+          description: 選填的 SEO 友善 URL 簡稱。如果未提供，將從標題自動生成。
+          example: "a-brand-new-article"
+        published_at: # 允許創建時設定發布狀態
+          type: string
+          format: date-time
+          nullable: true
+          description: 新文章的發布時間戳記。若為 null，則文章將為草稿狀態。
+          example: "2023-10-28T10:00:00Z"
+    UpdateArticle: # 用於更新現有文章
+      type: object
+      properties:
+        title:
+          type: string
+          description: 文章的更新標題
+          example: "一篇更新後的文章標題"
+        content:
+          type: string
+          description: 文章的更新內容，支援 Markdown 格式
+          example: "文章的 *更新* 主體。"
+        slug:
+          type: string
+          description: 更新後的 SEO 友善 URL 簡稱。
+          example: "an-updated-article-title"
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            發布文章的時間戳記。
+            設定為一個日期時間值以發布文章；設定為 null 則取消發布 (設為草稿)。
+            如果未提供此字段，則保持文章現有的發布狀態不變。
+          example: "2023-10-28T12:00:00Z"
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: 作者的帳號名稱 (對應到 'users.username')
+          example: "author_user"
+        password:
+          type: string
+          description: 作者的密碼
+          example: "securepassword123"
+    LoginResponse:
+      type: object
+      required:
+        - token
+        - user
+      properties:
+        token:
+          type: string
+          description: 用於認證請求的 JWT token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsIm5hbWUiOiJhdXRob3JfdXNlciIsImlhdCI6MTY3ODg4NjQwMCwiZXhwIjoxNjc4ODkwMDAwfQ.signature"
+        user:
+          $ref: '#/components/schemas/User'
+          description: 已認證使用者的基本資訊
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: 錯誤訊息
+          example: "無效的輸入"
+
+paths:
+  /articles:
+    get:
+      tags:
+        - 文章
+      summary: 取得所有已發布文章
+      description: 取得所有已發布文章的列表，依據 `published_at` 排序 (最新在前)。
+      operationId: getAllArticles
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: 分頁的頁碼。
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          description: 每頁的文章數量。
+      responses:
+        '200':
+          description: 文章列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article' # 這裡的 Article 已經包含了 author 資訊
+        '500':
+          description: 內部伺服器錯誤 - 伺服器處理請求時發生未預期的錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  value:
+                    message: "An unexpected error occurred on the server."
+    post:
+      tags:
+        - 文章
+      summary: 創建新文章
+      description: 允許已認證的作者創建新文章，包含標題、內容和可選的 Slug 及發布狀態。
+      operationId: createArticle
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewArticle'
+      responses:
+        '201':
+          description: 文章創建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article' # 這裡的 Article 已經包含了 author 資訊
+        '400':
+          description: 無效的請求 - 請求的數據格式不正確或缺少必要字段
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                InvalidInput:
+                  value:
+                    message: "Title and content are required."
+        '401':
+          description: 未經授權 - 認證 token 遺失或無效
+        '403':
+          description: 禁止訪問 - 已認證使用者無權執行此操作 (例如，非授權使用者嘗試創建文章)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                Forbidden:
+                  value:
+                    message: "You are not authorized to create articles."
+        '409': # 衝突，例如 slug 重複
+          description: 衝突 - 請求因與目標資源的當前狀態衝突而無法完成 (例如 slug 已存在)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                DuplicateSlug:
+                  value:
+                    message: "A post with this slug already exists."
+        '422': # 語義錯誤，雖然數據格式正確但無法處理（這裡保留，但 409 可能更精確）
+          description: 無法處理的實體 - 請求語法正確，但包含無法處理的語義錯誤 (例如，無法生成唯一的 slug)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: 內部伺服器錯誤 - 伺服器處理請求時發生未預期的錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  value:
+                    message: "Failed to create article due to a server issue."
+
+  /articles/{slug}: # 更改為使用 slug 進行公共訪問
+    get:
+      tags:
+        - 文章
+      summary: 依據 slug 取得單一文章
+      description: 使用文章的 SEO 友善 slug 取得單一文章的完整內容。
+      operationId: getArticleBySlug
+      parameters:
+        - in: path
+          name: slug
+          schema:
+            type: string
+          required: true
+          description: 要取得的文章的 SEO 友善 slug
+          example: "my-first-blog-post"
+      responses:
+        '200':
+          description: 文章資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article' # 這裡的 Article 已經包含了 author 資訊
+        '404':
+          description: 未找到 - 指定 slug 的文章不存在或未發布
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ArticleNotFound:
+                  value:
+                    message: "Article with slug 'my-first-blog-post' not found or not published."
+        '500':
+          description: 內部伺服器錯誤 - 伺服器處理請求時發生未預期的錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  value:
+                    message: "Failed to retrieve article due to a server issue."
+    put: # 更新功能
+      tags:
+        - 文章
+      summary: 更新現有文章
+      description: 允許已認證的作者更新其文章的標題、內容、slug 或發布狀態。
+      operationId: updateArticle
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: slug
+          schema:
+            type: string
+          required: true
+          description: 要更新的文章的 SEO 友善 slug
+          example: "my-first-blog-post"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateArticle'
+      responses:
+        '200':
+          description: 文章更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article' # 這裡的 Article 已經包含了 author 資訊
+        '400':
+          description: 無效的請求 - 請求的數據格式不正確
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                InvalidInput:
+                  value:
+                    message: "Invalid data provided for article update."
+        '401':
+          description: 未經授權 - 認證 token 遺失或無效
+        '403':
+          description: 禁止訪問 - 已認證使用者無權更新此文章 (例如，非文章作者)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                Forbidden:
+                  value:
+                    message: "You are not authorized to update this article."
+        '404':
+          description: 未找到 - 指定 slug 的文章不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ArticleNotFound:
+                  value:
+                    message: "Article with slug 'my-first-blog-post' not found."
+        '409': # 衝突，例如新的 slug 重複
+          description: 衝突 - 更新後的 slug 與現有文章衝突
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                DuplicateSlug:
+                  value:
+                    message: "The new slug 'another-existing-slug' already exists."
+        '422':
+          description: 無法處理的實體 - 請求語法正確，但包含無法處理的語義錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: 內部伺服器錯誤 - 伺服器處理請求時發生未預期的錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  value:
+                    message: "Failed to update article due to a server issue."
+    delete:
+      tags:
+        - 文章
+      summary: 刪除文章
+      description: 允許已認證的作者刪除其文章 (建議使用軟刪除)。
+      operationId: deleteArticle
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: slug
+          schema:
+            type: string
+          required: true
+          description: 要刪除的文章的 SEO 友善 slug
+          example: "my-first-blog-post"
+      responses:
+        '204':
+          description: 文章刪除成功 (無內容)
+        '401':
+          description: 未經授權 - 認證 token 遺失或無效
+        '403':
+          description: 禁止訪問 - 已認證使用者無權刪除此文章 (或非文章作者)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                Forbidden:
+                  value:
+                    message: "You are not authorized to delete this article."
+        '404':
+          description: 未找到 - 指定 slug 的文章不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ArticleNotFound:
+                  value:
+                    message: "Article with slug 'my-first-blog-post' not found."
+        '500':
+          description: 內部伺服器錯誤 - 伺服器處理請求時發生未預期的錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  value:
+                    message: "Failed to delete article due to a server issue."
+
+  /auth/login:
+    post:
+      tags:
+        - 認證
+      summary: 作者登入
+      description: 驗證作者 (使用者) 的身份，並提供 JWT token 以訪問受保護的管理路徑。
+      operationId: authorLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登入成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: 無效的請求 - 帳號名稱或密碼格式不正確
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                InvalidInput:
+                  value:
+                    message: "Username and password are required."
+        '401':
+          description: 未經授權 - 無效的帳號名稱或密碼
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                InvalidCredentials:
+                  value:
+                    message: "Invalid username or password."
+        '500':
+          description: 內部伺服器錯誤 - 伺服器處理請求時發生未預期的錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  value:
+                    message: "Login failed due to a server issue."
+
+  /auth/logout: # 登出路徑
+    post:
+      tags:
+        - 認證
+      summary: 作者登出
+      description: 使當前使用者的 JWT token 失效 (透過伺服器端黑名單或撤銷機制，並指示客戶端清除本地 token)。
+      operationId: authorLogout
+      security:
+        - bearerAuth: [] # 登出請求通常也需要有效的 token 來識別使用者並使其失效
+      responses:
+        '200':
+          description: 登出成功 - token 已失效或已從客戶端清除
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful."
+        '401':
+          description: 未經授權 - 認證 token 遺失或無效，無法執行登出操作
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: 內部伺服器錯誤 - 伺服器處理請求時發生未預期的錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  value:
+                    message: "Logout failed due to a server issue."
