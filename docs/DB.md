@@ -5,7 +5,6 @@ Table users {
   id integer [primary key, increment]
   username varchar(255) [not null, unique]
   password varchar(255) [not null, note: 'Hashed password']
-  remember_token varchar(100) [null]
   created_at timestamp [default: `CURRENT_TIMESTAMP`]
   updated_at timestamp [default: `CURRENT_TIMESTAMP`]
   deleted_at timestamp [null, note: 'Soft delete']
