@@ -9,9 +9,9 @@ servers:
 
 tags:
   - name: 文章
-    description: 與部落格文章相關的操作 (對應到 'posts' 表)
+    description: 與部落格文章相關的操作
   - name: 認證
-    description: 使用者身份驗證與授權 (對應到 'users' 表)
+    description: 使用者身份驗證與授權
 
 components:
   securitySchemes:
