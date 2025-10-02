@@ -2,7 +2,7 @@ openapi: 3.1.1
 info:
   title: HPB-Blog 系統 API
   description: 針對簡單 HPB-Blog 系統的 API 文件，基於 Go 後端與 Nuxt.js 前端開發。
-  version: 1.1.0
+  version: 1.0.0
 servers:
   - url: http://localhost:3000/api
     description: 開發環境伺服器
