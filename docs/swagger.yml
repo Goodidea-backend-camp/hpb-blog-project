@@ -85,7 +85,7 @@ components:
 
     NewArticle:
       type: object
-      required: [title, content]
+      required: [title, content, slug]
       properties:
         title:
           type: string
@@ -95,7 +95,7 @@ components:
           example: "這是新文章的 *主體*。"
         slug:
           type: string
-          description: 必填
+          description: SEO 友善 URL
           example: "a-brand-new-article"
         published_at:
           oneOf:
@@ -129,6 +129,14 @@ components:
           type: string
           example: "securepassword123"
 
+    LoginUser:
+      type: object
+      required: [username]
+      properties:
+        username:
+          type: string
+          example: "john_doe"
+
     LoginResponse:
       type: object
       required: [token, user]
@@ -136,9 +144,8 @@ components:
         token:
           type: string
           description: JWT access token
-        message:
-          type: string
-          example: "登入成功"
+        user:
+          $ref: '#/components/schemas/LoginUser'
 
   responses:
     BadRequest:
