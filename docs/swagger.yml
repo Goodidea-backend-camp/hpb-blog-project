@@ -140,26 +140,6 @@ components:
           type: string
           example: "登入成功"
 
-    PaginatedArticles:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Article'
-        meta:
-          type: object
-          properties:
-            total:
-              type: integer
-              example: 120
-            page:
-              type: integer
-              example: 1
-            limit:
-              type: integer
-              example: 10
-
   responses:
     BadRequest:
       description: 無效的請求
@@ -192,27 +172,15 @@ paths:
       tags: [文章]
       summary: 取得所有已發布文章
       operationId: getAllArticles
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            default: 1
-            minimum: 1
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 10
-            minimum: 1
-            maximum: 100
       responses:
         '200':
-          description: 分頁文章列表
+          description: 文章列表
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedArticles'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
         '500':
           description: 內部伺服器錯誤
           $ref: '#/components/responses/InternalError'
