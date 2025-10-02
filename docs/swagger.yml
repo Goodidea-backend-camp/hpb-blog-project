@@ -97,10 +97,6 @@ components:
           type: string
           description: 選填，未提供會自動生成
           example: "a-brand-new-article"
-        status:
-          type: string
-          enum: [draft, published]
-          default: draft
         published_at:
           oneOf:
             - type: string
@@ -116,9 +112,6 @@ components:
           type: string
         slug:
           type: string
-        status:
-          type: string
-          enum: [draft, published, archived]
         published_at:
           oneOf:
             - type: string
