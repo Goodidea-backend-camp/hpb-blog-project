@@ -148,7 +148,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Forbidden:
-      description: 禁止訪問。這可能是因為身份驗證失敗、權限不足或資源不存在。請檢查請求憑證或您的權限。
+      description: 禁止訪問。
       content:
         application/json:
           schema:
