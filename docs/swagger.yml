@@ -281,14 +281,8 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          description: 回傳被刪除的文章
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Article'
         '204':
-          description: 刪除成功，無內容
+          description: 文章刪除成功
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
