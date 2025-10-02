@@ -95,7 +95,7 @@ components:
           example: "這是新文章的 *主體*。"
         slug:
           type: string
-          description: 選填，未提供會自動生成
+          description: 必填
           example: "a-brand-new-article"
         published_at:
           oneOf:
