@@ -26,7 +26,7 @@ components:
       required: [code, message]
       properties:
         code:
-          type: string
+          type: integer
           description: 錯誤代碼。
           example: "錯誤代碼"
         message:
