@@ -329,16 +329,8 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        '204':
           description: 登出成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "登出成功"
         '403':
           $ref: '#/components/responses/Forbidden'
         '500':
