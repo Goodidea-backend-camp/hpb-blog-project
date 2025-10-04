@@ -177,7 +177,11 @@ paths:
   /articles:
     get:
       tags: [文章]
-      summary: 取得所有已發布文章
+      summary: 取得文章列表
+      description: |
+        取得文章列表，此端點會根據請求的網域有不同的行為：
+        - **前台 (例如 `www.test.com`)**: 只會回傳 `published_at` 不為 `null` 的已發布文章。
+        - **後台 (例如 `admin.test.com`)**: 將回傳所有文章，無論 `published_at` 的狀態為何。
       operationId: getAllArticles
       responses:
         '200':
