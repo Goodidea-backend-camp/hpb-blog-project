@@ -1,0 +1,341 @@
+openapi: 3.1.1
+info:
+  title: HPB-Blog 系統 API
+  description: 針對簡單 HPB-Blog 系統的 API 文件，基於 Go 後端與 Nuxt.js 前端開發。
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: 開發環境伺服器
+
+tags:
+  - name: 文章
+    description: 與部落格文章相關的操作
+  - name: 認證
+    description: 使用者身份驗證與授權
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          description: 錯誤代碼。
+          example: "錯誤代碼"
+        message:
+          type: string
+          description: 錯誤訊息
+          example: "錯誤訊息"
+
+    AuthorInfo:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: integer
+          format: int32
+          example: 1
+        username:
+          type: string
+          example: "john_doe"
+
+    Article:
+      type: object
+      required: [id, author, title, slug, content, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          format: int32
+          example: 101
+        author:
+          $ref: '#/components/schemas/AuthorInfo'
+        title:
+          type: string
+          example: "我的第一篇部落格文章"
+        slug:
+          type: string
+          description: SEO 友善 URL
+          example: "my-first-blog-post"
+        content:
+          type: string
+          description: 支援 Markdown 格式
+          example: "# 歡迎\n\n這是 **Markdown** 內容。"
+        published_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+          description: 文章發布時間，未發布為 null
+          example: "2023-10-27T10:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-10-27T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-10-27T09:30:00Z"
+
+    NewArticle:
+      type: object
+      required: [title, content, slug]
+      properties:
+        title:
+          type: string
+          example: "一篇全新的文章"
+        content:
+          type: string
+          example: "這是新文章的 *主體*。"
+        slug:
+          type: string
+          description: SEO 友善 URL
+          example: "a-brand-new-article"
+        published_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+
+    UpdateArticle:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        slug:
+          type: string
+        published_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: "author_user"
+        password:
+          type: string
+          example: "securepassword123"
+
+    LoginUser:
+      type: object
+      required: [username]
+      properties:
+        username:
+          type: string
+          example: "john_doe"
+
+    LoginResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        user:
+          $ref: '#/components/schemas/LoginUser'
+
+  responses:
+    BadRequest:
+      description: 無效的請求
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: 禁止訪問。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: 未找到
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: 內部伺服器錯誤
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+paths:
+  /articles:
+    get:
+      tags: [文章]
+      summary: 取得文章列表
+      description: |
+        取得文章列表，此端點會根據請求的網域有不同的行為：
+        - **前台 (例如 `www.test.com`)**: 只會回傳 `published_at` 不為 `null` 的已發布文章。
+        - **後台 (例如 `admin.test.com`)**: 將回傳所有文章，無論 `published_at` 的狀態為何。
+      operationId: getAllArticles
+      responses:
+        '200':
+          description: 文章列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
+        '500':
+          description: 內部伺服器錯誤
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [文章]
+      summary: 創建新文章
+      operationId: createArticle
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewArticle'
+      responses:
+        '201':
+          description: 文章創建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /articles/{slug}:
+    get:
+      tags: [文章]
+      summary: 依據 slug 取得單一文章
+      operationId: getArticleBySlug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 文章資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [文章]
+      summary: 更新現有文章
+      operationId: updateArticle
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateArticle'
+      responses:
+        '200':
+          description: 文章更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [文章]
+      summary: 刪除文章
+      operationId: deleteArticle
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 文章刪除成功
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/login:
+    post:
+      tags: [認證]
+      summary: 使用者登入
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登入成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/logout:
+    post:
+      tags: [認證]
+      summary: 使用者登出
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: 登出成功
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
