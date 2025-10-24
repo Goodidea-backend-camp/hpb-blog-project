@@ -1,0 +1,33 @@
+# --- 建構階段 (Build Stage) ---
+ARG GO_VERSION
+FROM ${GO_VERSION} AS builder
+WORKDIR /app
+
+COPY www_root/hpb-blog-backend/go.mod www_root/hpb-blog-backend/go.sum ./
+RUN go mod download  
+
+COPY www_root/hpb-blog-backend/. .
+
+# 建構 Go 應用程式
+# CGO_ENABLED=0 建立靜態二進位檔，避免動態連結庫問題
+# GOOS=linux 指定目標作業系統為 Linux
+# -a 重新建構所有套件
+# -installsuffix cgo 確保靜態連結
+# -ldflags "-s -w" 移除調試資訊和符號表，使二進位檔更小
+# -o /app/server 指定輸出二進位檔的名稱和路徑
+# ./cmd/server 是您的 main.go 所在的目錄
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "-s -w" -o /app/server ./cmd/server
+
+# --- 最終階段 (Final Stage) ---
+ARG GO_VERSION
+FROM ${GO_VERSION}
+# 設定預設環境字集
+ENV LANG C.UTF-8
+
+RUN apk update &&\
+    apk add --no-cache nano procps
+
+COPY --from=builder /app/server /usr/local/bin/server 
+EXPOSE 8080 
+
+CMD ["/usr/local/bin/server"]

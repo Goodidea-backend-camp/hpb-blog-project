@@ -1,0 +1,29 @@
+# --- Build Stage ---
+# 安裝工具
+ARG GO_VERSION
+FROM ${GO_VERSION} AS builder
+WORKDIR /tools
+
+RUN apk update && apk add --no-cache git
+
+RUN go install github.com/air-verse/air@v1.63.0 && \
+    go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 && \
+    go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4
+
+# --- Final Stage ---
+# 實際開發用的環境
+ARG GO_VERSION
+FROM ${GO_VERSION}
+WORKDIR /app
+
+COPY --from=builder /go/bin/air /usr/local/bin/air
+COPY --from=builder /go/bin/sqlc /usr/local/bin/sqlc
+COPY --from=builder /go/bin/migrate /usr/local/bin/migrate
+
+COPY www_root/hpb-blog-backend/go.mod www_root/hpb-blog-backend/go.sum ./
+RUN go mod download
+
+COPY www_root/hpb-blog-backend/. .
+
+EXPOSE 8080
+CMD ["air", "-c", ".air.toml"]
