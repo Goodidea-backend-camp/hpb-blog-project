@@ -1,8 +1,8 @@
-ARG NGINX_VERSION
+ARG NGINX_VERSION=nginx:1.29.2-alpine
 FROM ${NGINX_VERSION}
 
 # 設定預設環境字集
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Install logrotate
 # RUN 指令可以協助安裝套件或者執行否些指令

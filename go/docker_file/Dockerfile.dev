@@ -1,6 +1,6 @@
 # --- Build Stage ---
 # 安裝工具
-ARG GO_VERSION
+ARG GO_VERSION=golang:1.25.0-alpine
 FROM ${GO_VERSION} AS builder
 WORKDIR /tools
 
@@ -12,7 +12,7 @@ RUN go install github.com/air-verse/air@v1.63.0 && \
 
 # --- Final Stage ---
 # 實際開發用的環境
-ARG GO_VERSION
+ARG GO_VERSION=golang:1.25.0-alpine
 FROM ${GO_VERSION}
 WORKDIR /app
 
