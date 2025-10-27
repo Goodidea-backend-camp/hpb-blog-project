@@ -16,8 +16,8 @@ services:
 
   frontend:
     build:
-      context: ./www_root/hpb-blog-frontend
-      dockerfile: Dockerfile.dev
+      context: ./
+      dockerfile: ./nuxt/Dockerfile.dev
     environment:
       - API_BASE_URL=http://backend:8080
       - ENVIRONMENT=${ENVIRONMENT}
