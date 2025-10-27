@@ -17,7 +17,7 @@ services:
   frontend:
     build:
       context: ./
-      dockerfile: ./nuxt/Dockerfile.dev
+      dockerfile: ./nuxt/docker_file/Dockerfile.${ENVIRONMENT}
     environment:
       - API_BASE_URL=http://backend:8080
       - ENVIRONMENT=${ENVIRONMENT}
