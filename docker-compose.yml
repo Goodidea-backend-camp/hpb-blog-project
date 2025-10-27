@@ -20,6 +20,7 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       - API_BASE_URL=http://backend:8080
+      - ENVIRONMENT=${ENVIRONMENT}
     ports:
       - "${FRONTEND_PORT}:3000"
     volumes:
