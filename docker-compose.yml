@@ -1,19 +1,51 @@
 services:
   backend:
+    build:
+      context: ./
+      dockerfile: ./go/docker_file/Dockerfile.${ENVIRONMENT}
+      args:
+        GO_VERSION: ${GO_VERSION}
     depends_on:
       - db
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
+    ports:
+      - "${BACKEND_PORT}:8080"
+    volumes:
+      - ./www_root/hpb-blog-backend:/app
 
   frontend:
+    build:
+      context: ./www_root/hpb-blog-frontend
+      dockerfile: Dockerfile.dev
     environment:
       - API_BASE_URL=http://backend:8080
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    volumes:
+      - ./www_root/hpb-blog-frontend:/app
+      - /app/node_modules
 
   nginx:
-    image: ${NGINX_VERSION}
+    build:
+      context: ./web_service/docker_file
+      dockerfile: Dockerfile
+      args:
+        - NGINX_VERSION=${NGINX_VERSION}
     depends_on:
       - frontend
       - backend
+    ports:
+      - "${HTTP_PORT}:80"
+      - "${HTTPS_PORT}:443"
+    volumes:
+      - ./web_service/etc/nginx/conf.d:/etc/nginx/conf.d
+      - ./www_root:/var/www/html
+      - ./web_service/log/nginx:/var/log/nginx
+      - ./web_service/etc/nginx/ssl:/etc/nginx/ssl
+      - ./web_service/etc/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./web_service/log/cron:/var/log/cron
+      - ./web_service/logrotate.d/nginx:/etc/logrotate.d/nginx
 
   db:
     image: ${POSTGRES_VERSION}
