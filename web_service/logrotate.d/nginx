@@ -1,4 +1,4 @@
-# logroate規則
+# logrotate規則
 
 /var/log/nginx/*.log {
         su root root
