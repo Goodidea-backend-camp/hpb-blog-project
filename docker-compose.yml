@@ -58,4 +58,4 @@ services:
     ports:
       - "${HOST_POSTGRES_PORT}:5432"
     volumes:
-      - ./db/postgres_data:/var/lib/postgresql/data
+      - ./db/postgres_data:/var/lib/postgresql
