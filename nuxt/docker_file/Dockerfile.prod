@@ -1,0 +1,51 @@
+# --- Build Stage ---
+FROM node:22.19.0-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY www_root/hpb-blog-frontend/package*.json ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci --ignore-scripts
+
+# Copy source code
+COPY www_root/hpb-blog-frontend/ .
+
+# 生成 Nuxt 所需的類型定義檔和暫存檔案
+RUN npx nuxt prepare
+
+# Build the application
+RUN npm run build
+
+# --- Production Stage ---
+FROM node:22.19.0-alpine AS production
+
+# Install dumb-init and wget for proper signal handling and health checks
+RUN apk add --no-cache dumb-init wget
+
+# Create app user for security
+RUN addgroup -g 1001 -S nodejs && \
+  adduser -S nuxt -u 1001
+
+WORKDIR /app
+
+# Copy built application from builder stage(加入 chown 是為了確保檔案的擁有者是 nuxt 使用者)
+COPY --from=builder --chown=nuxt:nodejs /app/.output /app/.output
+COPY --from=builder --chown=nuxt:nodejs /app/package*.json /app/
+
+# Install only production dependencies (skip scripts)
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
+# Switch to non-root user
+USER nuxt
+
+# Expose port
+EXPOSE 3000
+
+# Use dumb-init to handle signals properly
+## Refernce: https://blog.miniasp.com/post/2021/07/09/Use-dumb-init-in-Docker-Container
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", ".output/server/index.mjs"]

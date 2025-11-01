@@ -1,0 +1,12 @@
+FROM node:22.19.0-alpine
+
+WORKDIR /app
+
+COPY www_root/hpb-blog-frontend/package*.json ./
+RUN npm install
+
+COPY www_root/hpb-blog-frontend/ .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

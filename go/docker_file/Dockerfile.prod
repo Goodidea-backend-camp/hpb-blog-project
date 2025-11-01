@@ -1,0 +1,58 @@
+# Reference: https://snyk.io/blog/containerizing-go-applications-with-docker/
+
+# --- 建構階段 (Build Stage) ---
+ARG GO_VERSION=golang:1.25.0-alpine
+FROM ${GO_VERSION} AS builder
+
+# create a working directory inside the image
+WORKDIR /app
+
+# copy Go modules and dependencies to image
+COPY www_root/hpb-blog-backend/go.mod www_root/hpb-blog-backend/go.sum ./
+
+# download Go modules and dependencies
+RUN go mod download  
+
+# copy directory files
+COPY www_root/hpb-blog-backend/. .
+
+# Set environment variables
+# CGO_ENABLED=0 建立靜態二進位檔，避免動態連結庫問題
+# GOOS=linux 指定目標作業系統為 Linux
+ENV CGO_ENABLED=0 \
+    GOOS=linux
+
+# Compile application
+# -a 重新建構所有套件
+# -installsuffix cgo 確保靜態連結
+# -ldflags "-s -w" 移除調試資訊和符號表，使二進位檔更小
+# -o /app/server 指定輸出二進位檔的名稱和路徑
+# ./cmd/server main.go 所在的目錄
+RUN go build -a -installsuffix cgo -ldflags "-s -w" -o /app/server ./cmd/server
+
+# --- 最終階段 (Final Stage) ---
+FROM alpine:3.22
+
+# 設定預設環境字集
+ENV LANG=C.UTF-8 \
+    GIN_MODE=release
+
+# 安裝常用工具
+RUN apk update &&\
+    apk add --no-cache nano procps ca-certificates tzdata
+
+# 建立非 root 用戶
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# 設定工作目錄
+WORKDIR /app
+
+# 複製二進位檔，並將擁有者設為非 root 用戶
+COPY --from=builder --chown=appuser:appgroup /app/server /app/server
+
+# 切換到非 root 用戶
+USER appuser
+
+EXPOSE 8080 
+
+CMD ["/app/server"]
