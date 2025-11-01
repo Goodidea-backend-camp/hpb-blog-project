@@ -14,9 +14,9 @@ services:
       - "${BACKEND_PORT}:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      interval: 15s
+      timeout: 15s
+      retries: 10
 
   frontend:
     build:
@@ -62,6 +62,7 @@ services:
       - ./web_service/logrotate.d/nginx:/etc/logrotate.d/nginx
 
   db:
+    platform: linux/amd64
     image: ${POSTGRES_VERSION}
     restart: always
     environment:
