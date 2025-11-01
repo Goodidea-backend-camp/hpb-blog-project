@@ -19,8 +19,8 @@ COPY www_root/hpb-blog-backend/. .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "-s -w" -o /app/server ./cmd/server
 
 # --- 最終階段 (Final Stage) ---
-ARG GO_VERSION=golang:1.25.0-alpine
-FROM ${GO_VERSION}
+FROM alpine:3.22
+
 # 設定預設環境字集
 ENV LANG=C.UTF-8
 
