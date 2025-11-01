@@ -27,9 +27,6 @@ services:
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
     ports:
       - "${FRONTEND_PORT}:3000"
-    volumes:
-      - ./www_root/hpb-blog-frontend:/app
-      - /app/node_modules
 
   nginx:
     build:

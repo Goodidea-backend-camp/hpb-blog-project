@@ -1,0 +1,11 @@
+# Development overrides for docker-compose.yml
+
+services:
+  frontend:
+    volumes:
+      - ./www_root/hpb-blog-frontend:/app
+      - /app/node_modules
+
+  backend:
+    volumes:
+      - ./www_root/hpb-blog-backend:/app
