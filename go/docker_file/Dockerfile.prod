@@ -34,7 +34,8 @@ RUN go build -a -installsuffix cgo -ldflags "-s -w" -o /app/server ./cmd/server
 FROM alpine:3.22
 
 # 設定預設環境字集
-ENV LANG=C.UTF-8
+ENV LANG=C.UTF-8 \
+    GIN_MODE=release
 
 # 安裝常用工具
 RUN apk update &&\
