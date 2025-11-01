@@ -11,8 +11,6 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
     ports:
       - "${BACKEND_PORT}:8080"
-    volumes:
-      - ./www_root/hpb-blog-backend:/app
 
   frontend:
     build:
