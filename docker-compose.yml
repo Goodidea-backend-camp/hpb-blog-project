@@ -11,13 +11,15 @@ services:
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - ALLOWED_BACKEND_HOSTS=${ALLOWED_BACKEND_HOSTS}
     ports:
       - "${BACKEND_PORT}:8080"
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1",
+          "wget --header='Host: api.hpb.testdata.work' --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1",
         ]
       interval: 15s
       timeout: 15s
@@ -34,8 +36,6 @@ services:
       - ENVIRONMENT=${ENVIRONMENT}
       - BACKEND_PORT=${BACKEND_PORT:-8080}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-      - BACKEND_DOMAIN=${BACKEND_DOMAIN}
     ports:
       - "${FRONTEND_PORT}:3000"
     healthcheck:
