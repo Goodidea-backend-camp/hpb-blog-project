@@ -13,6 +13,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - ALLOWED_BACKEND_HOSTS=${ALLOWED_BACKEND_HOSTS}
+      - BACKEND_PORT=${BACKEND_PORT}
     ports:
       - "${BACKEND_PORT}:8080"
     healthcheck:
